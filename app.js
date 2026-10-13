@@ -2,6 +2,23 @@
   const STORAGE_KEY = "impostor-settings";
   const $ = (id) => document.getElementById(id);
 
+  const CATEGORY_ICONS = {
+    "Comida": "🍕", "Animales": "🐾", "Lugares": "📍", "Objetos": "🧸",
+    "Profesiones": "👩‍🚒", "Deportes": "⚽", "Películas y series": "🎬",
+    "Transporte": "🚗", "Frutas y verduras": "🥑", "Bebidas": "🥤",
+    "Postres y dulces": "🍰", "Países": "🌍", "Ciudades": "🏙️",
+    "Monumentos": "🗽", "Naturaleza": "🌋", "Partes del cuerpo": "🫀",
+    "Ropa y accesorios": "👟", "En casa": "🛋️", "Colegio": "🎒",
+    "Tecnología": "💻", "Apps y redes sociales": "📱", "Marcas": "🏷️",
+    "Videojuegos": "🎮", "Superhéroes y villanos": "🦸", "Dibujos animados": "📺",
+    "Famosos": "⭐", "Instrumentos musicales": "🎸", "Fiestas y celebraciones": "🎉",
+    "Hobbies": "🎨", "Fantasía y mitología": "🐉", "En la playa": "🏖️",
+    "Tareas del día a día": "🧺", "Emociones y sensaciones": "😵‍💫",
+  };
+  const icon = (cat) => CATEGORY_ICONS[cat] || "🃏";
+
+  const AVATAR_COLORS = ["#8b5cf6", "#ec4899", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6", "#ef4444", "#a855f7"];
+
   const settings = {
     players: [],
     impostors: 1,
@@ -31,6 +48,50 @@
     window.scrollTo(0, 0);
   }
 
+  function vibrate(pattern) {
+    try { navigator.vibrate && navigator.vibrate(pattern); } catch (e) {}
+  }
+
+  function avatarColor(name) {
+    let h = 0;
+    for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+    return AVATAR_COLORS[h % AVATAR_COLORS.length];
+  }
+
+  function paintAvatar(el, name) {
+    el.textContent = [...name][0] || "?";
+    el.style.setProperty("--c", avatarColor(name));
+  }
+
+  function makeAvatar(name, size = "") {
+    const el = document.createElement("span");
+    el.className = "avatar " + size;
+    paintAvatar(el, name);
+    return el;
+  }
+
+  function shake(el) {
+    el.classList.remove("shake");
+    void el.offsetWidth;
+    el.classList.add("shake");
+  }
+
+  function confetti(colors) {
+    const box = $("confetti");
+    box.innerHTML = "";
+    for (let i = 0; i < 90; i++) {
+      const p = document.createElement("i");
+      p.style.left = Math.random() * 100 + "vw";
+      p.style.background = pick(colors);
+      p.style.setProperty("--dx", (Math.random() * 40 - 20) + "vw");
+      p.style.setProperty("--r", (Math.random() * 1080 - 540) + "deg");
+      p.style.animationDuration = 2.2 + Math.random() * 2 + "s";
+      p.style.animationDelay = Math.random() * 0.6 + "s";
+      box.appendChild(p);
+    }
+    setTimeout(() => (box.innerHTML = ""), 5000);
+  }
+
   function save() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch (e) {}
   }
@@ -58,7 +119,8 @@
     list.innerHTML = "";
     settings.players.forEach((name, i) => {
       const li = document.createElement("li");
-      li.textContent = name;
+      li.appendChild(makeAvatar(name));
+      li.appendChild(document.createTextNode(name));
       const rm = document.createElement("button");
       rm.className = "remove";
       rm.type = "button";
@@ -73,17 +135,28 @@
       list.appendChild(li);
     });
     $("player-count").textContent = settings.players.length;
+    $("player-empty").classList.toggle("hidden", settings.players.length >= 3);
+    $("player-empty").textContent = settings.players.length
+      ? `Faltan ${3 - settings.players.length} para poder jugar`
+      : "Añade al menos 3 jugadores";
 
     settings.impostors = Math.min(settings.impostors, maxImpostors());
     $("imp-count").textContent = settings.impostors;
+    $("imp-label").textContent = settings.impostors === 1 ? "impostor" : "impostores";
+    $("imp-minus").disabled = settings.impostors <= 1;
+    $("imp-plus").disabled = settings.impostors >= maxImpostors();
 
+    const all = Object.keys(CATEGORIES);
     const cats = $("category-list");
     cats.innerHTML = "";
-    Object.keys(CATEGORIES).forEach((cat) => {
+    all.forEach((cat) => {
       const chip = document.createElement("button");
       chip.type = "button";
       chip.className = "chip" + (settings.categories.includes(cat) ? " on" : "");
-      chip.textContent = cat;
+      const em = document.createElement("span");
+      em.className = "em";
+      em.textContent = icon(cat);
+      chip.append(em, cat);
       chip.onclick = () => {
         if (settings.categories.includes(cat)) {
           settings.categories = settings.categories.filter((c) => c !== cat);
@@ -95,6 +168,7 @@
       };
       cats.appendChild(chip);
     });
+    $("cat-count").textContent = settings.random ? `${all.length}` : `${settings.categories.length}/${all.length}`;
 
     $("opt-random").checked = settings.random;
     $("category-picker").classList.toggle("disabled", settings.random);
@@ -109,6 +183,7 @@
     if (!name) return;
     if (settings.players.some((p) => p.toLowerCase() === name.toLowerCase())) {
       $("setup-error").textContent = "Ese nombre ya está.";
+      shake(input);
       return;
     }
     settings.players.push(name);
@@ -149,12 +224,13 @@
   };
 
   $("start-btn").onclick = () => {
-    if (settings.players.length < 3) {
-      $("setup-error").textContent = "Hacen falta al menos 3 jugadores.";
-      return;
-    }
-    if (!settings.random && !settings.categories.length) {
-      $("setup-error").textContent = "Elige al menos una categoría.";
+    let error = "";
+    if (settings.players.length < 3) error = "Hacen falta al menos 3 jugadores.";
+    else if (!settings.random && !settings.categories.length) error = "Elige al menos una categoría.";
+    if (error) {
+      $("setup-error").textContent = error;
+      shake($("start-btn"));
+      vibrate(80);
       return;
     }
     startGame();
@@ -179,20 +255,38 @@
 
   function showReveal() {
     const idx = game.order[game.revealIndex];
+    const name = settings.players[idx];
     const card = $("reveal-card");
+    // Se gira la carta de vuelta sin animación para que nadie vea el reverso del siguiente.
+    card.classList.add("no-anim");
     card.classList.remove("revealed", "impostor");
+    void card.offsetWidth;
+    card.classList.remove("no-anim");
+    document.body.classList.remove("danger-mode");
     $("reveal-next").classList.add("hidden");
-    $("reveal-step").textContent = `Jugador ${game.revealIndex + 1} de ${game.order.length}`;
-    $("reveal-name").textContent = settings.players[idx];
+
+    const dots = $("reveal-dots");
+    dots.innerHTML = "";
+    game.order.forEach((_, i) => {
+      const d = document.createElement("i");
+      if (i < game.revealIndex) d.className = "done";
+      if (i === game.revealIndex) d.className = "now";
+      dots.appendChild(d);
+    });
+
+    $("reveal-name").textContent = name;
+    paintAvatar($("reveal-avatar"), name);
 
     if (game.impostors.has(idx)) {
       $("reveal-role").textContent = "Eres el impostor";
       $("reveal-word").textContent = "🕵️";
-      $("reveal-hint").textContent = settings.hint ? `Pista: la categoría es «${game.category}»` : "Disimula y descubre la palabra";
+      $("reveal-hint").textContent = settings.hint
+        ? `Pista: ${icon(game.category)} ${game.category}`
+        : "Disimula y descubre la palabra";
     } else {
       $("reveal-role").textContent = "La palabra secreta es";
       $("reveal-word").textContent = game.word;
-      $("reveal-hint").textContent = `Categoría: ${game.category}`;
+      $("reveal-hint").textContent = `${icon(game.category)} ${game.category}`;
     }
     show("reveal");
   }
@@ -200,11 +294,14 @@
   $("reveal-card").onclick = () => {
     const card = $("reveal-card");
     if (card.classList.contains("revealed")) return;
+    const isImpostor = game.impostors.has(game.order[game.revealIndex]);
     card.classList.add("revealed");
-    if (game.impostors.has(game.order[game.revealIndex])) card.classList.add("impostor");
+    card.classList.toggle("impostor", isImpostor);
+    document.body.classList.toggle("danger-mode", isImpostor);
+    vibrate(isImpostor ? [60, 60, 120] : 40);
     $("reveal-next").classList.remove("hidden");
     $("reveal-next").textContent =
-      game.revealIndex === game.order.length - 1 ? "Ocultar y empezar" : "Ocultar y pasar";
+      game.revealIndex === game.order.length - 1 ? "Ocultar y empezar 🚀" : "Ocultar y pasar ➜";
   };
 
   $("reveal-next").onclick = () => {
@@ -214,9 +311,11 @@
   };
 
   function showDiscuss() {
-    const alive = [...game.alive];
-    $("first-player").textContent = settings.players[pick(alive)];
-    $("direction").textContent = Math.random() < 0.5 ? "y seguid en sentido horario ↻" : "y seguid en sentido antihorario ↺";
+    document.body.classList.remove("danger-mode");
+    const first = settings.players[pick([...game.alive])];
+    $("first-player").textContent = first;
+    paintAvatar($("first-avatar"), first);
+    $("direction").textContent = Math.random() < 0.5 ? "↻ Sentido horario" : "↺ Sentido antihorario";
     show("discuss");
   }
 
@@ -225,13 +324,15 @@
   function showVote() {
     const list = $("vote-list");
     list.innerHTML = "";
-    [...game.alive].forEach((idx) => {
+    [...game.alive].forEach((idx, n) => {
+      const name = settings.players[idx];
       const li = document.createElement("li");
+      li.style.animationDelay = n * 0.04 + "s";
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.textContent = settings.players[idx];
+      btn.append(makeAvatar(name, "lg"), name);
       btn.onclick = () => {
-        if (confirm(`¿Expulsar a ${settings.players[idx]}?`)) expel(idx);
+        if (confirm(`¿Expulsar a ${name}?`)) expel(idx);
       };
       li.appendChild(btn);
       list.appendChild(li);
@@ -247,8 +348,10 @@
 
   function expel(idx) {
     game.alive.delete(idx);
+    const name = settings.players[idx];
     const verdict = $("expelled-verdict");
-    $("expelled-name").textContent = settings.players[idx];
+    $("expelled-name").textContent = name;
+    paintAvatar($("expelled-avatar"), name);
     $("guess-box").classList.add("hidden");
     $("expelled-continue").classList.add("hidden");
 
@@ -256,12 +359,14 @@
       verdict.textContent = "¡Era el impostor! 🎯";
       verdict.className = "verdict caught";
       $("guess-box").classList.remove("hidden");
+      vibrate([40, 40, 40]);
     } else {
       verdict.textContent = "Era inocente 😬";
       verdict.className = "verdict innocent";
+      vibrate(200);
       const { imps, civs } = aliveCounts();
       if (imps >= civs) {
-        setTimeout(() => endGame(false, "Los impostores ya son tantos como los civiles."), 1200);
+        setTimeout(() => endGame(false, "Los impostores ya son tantos como los civiles."), 1600);
       } else {
         $("expelled-continue").classList.remove("hidden");
       }
@@ -284,16 +389,34 @@
   $("expelled-continue").onclick = showDiscuss;
 
   function endGame(civiliansWin, reason) {
-    $("end-title").textContent = civiliansWin ? "🎉 ¡Ganan los civiles!" : "🕵️ ¡Gana el impostor!";
+    document.body.classList.toggle("danger-mode", !civiliansWin);
+    $("end-emoji").textContent = civiliansWin ? "🎉" : "😈";
+    $("end-title").innerHTML = civiliansWin ? "¡Ganan los <span>civiles</span>!" : "¡Gana el <span>impostor</span>!";
     $("end-reason").textContent = reason;
     $("end-word").textContent = game.word;
-    $("end-category").textContent = game.category;
-    $("end-impostors").textContent = [...game.impostors].map((i) => settings.players[i]).join(", ");
+    $("end-category").textContent = `${icon(game.category)} ${game.category}`;
+    $("end-imp-label").textContent = game.impostors.size > 1 ? "Los impostores eran" : "El impostor era";
+
+    const box = $("end-impostors");
+    box.innerHTML = "";
+    game.impostors.forEach((i) => {
+      const name = settings.players[i];
+      const el = document.createElement("div");
+      el.className = "imp";
+      el.append(makeAvatar(name, "lg"), name);
+      box.appendChild(el);
+    });
+
     show("end");
+    confetti(civiliansWin
+      ? ["#8b5cf6", "#22d3ee", "#34d399", "#facc15", "#f5f3ff"]
+      : ["#ff2e4d", "#ff3d81", "#7f1d1d", "#f5f3ff"]);
+    vibrate(civiliansWin ? [50, 50, 50, 50, 150] : [300]);
   }
 
   $("again-btn").onclick = startGame;
   $("settings-btn").onclick = () => {
+    document.body.classList.remove("danger-mode");
     renderSetup();
     show("setup");
   };
