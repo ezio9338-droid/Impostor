@@ -109,6 +109,10 @@ input[type="text"]:focus { border-color: var(--accent); }
 }
 .chip.on { border-color: var(--accent); color: var(--text); background: rgba(124, 92, 255, .2); }
 
+#category-picker { margin-top: 14px; }
+#category-picker.disabled { display: none; }
+.row.quick { margin-bottom: 10px; }
+
 .toggle { display: flex; align-items: center; gap: 12px; cursor: pointer; }
 .toggle input { width: 22px; height: 22px; accent-color: var(--accent); }
 

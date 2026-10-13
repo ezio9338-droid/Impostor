@@ -16,4 +16,4 @@ En el repo: **Settings → Pages → Build and deployment → Deploy from a bran
 elige la rama y la carpeta `/ (root)`.
 
 ## Personalizar
-Las palabras están en `words.js`. Puedes añadir categorías o palabras nuevas.
+Las palabras están en `words.js` (33 categorías, más de 800 palabras). Puedes añadir categorías o palabras nuevas.

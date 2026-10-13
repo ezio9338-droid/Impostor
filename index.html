@@ -36,7 +36,17 @@
 
       <div class="card">
         <h2>Categorías</h2>
-        <div id="category-list" class="chips"></div>
+        <label class="toggle">
+          <input type="checkbox" id="opt-random">
+          <span>🎲 Al azar entre todas las categorías</span>
+        </label>
+        <div id="category-picker">
+          <div class="row quick">
+            <button type="button" class="btn small ghost" id="cat-all">Todas</button>
+            <button type="button" class="btn small ghost" id="cat-none">Ninguna</button>
+          </div>
+          <div id="category-list" class="chips"></div>
+        </div>
       </div>
 
       <div class="card">

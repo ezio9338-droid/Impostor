@@ -7,6 +7,7 @@
     impostors: 1,
     categories: Object.keys(CATEGORIES),
     hint: false,
+    random: true,
   };
 
   let game = null;
@@ -45,6 +46,7 @@
         if (valid.length) settings.categories = valid;
       }
       settings.hint = !!data.hint;
+      if (typeof data.random === "boolean") settings.random = data.random;
     } catch (e) {}
   }
 
@@ -94,6 +96,8 @@
       cats.appendChild(chip);
     });
 
+    $("opt-random").checked = settings.random;
+    $("category-picker").classList.toggle("disabled", settings.random);
     $("opt-hint").checked = settings.hint;
     $("setup-error").textContent = "";
   }
@@ -124,6 +128,21 @@
     save();
     renderSetup();
   };
+  $("opt-random").onchange = (e) => {
+    settings.random = e.target.checked;
+    save();
+    renderSetup();
+  };
+  $("cat-all").onclick = () => {
+    settings.categories = Object.keys(CATEGORIES);
+    save();
+    renderSetup();
+  };
+  $("cat-none").onclick = () => {
+    settings.categories = [];
+    save();
+    renderSetup();
+  };
   $("opt-hint").onchange = (e) => {
     settings.hint = e.target.checked;
     save();
@@ -134,7 +153,7 @@
       $("setup-error").textContent = "Hacen falta al menos 3 jugadores.";
       return;
     }
-    if (!settings.categories.length) {
+    if (!settings.random && !settings.categories.length) {
       $("setup-error").textContent = "Elige al menos una categoría.";
       return;
     }
@@ -143,7 +162,7 @@
 
   // ---------- Partida ----------
   function startGame() {
-    const category = pick(settings.categories);
+    const category = pick(settings.random ? Object.keys(CATEGORIES) : settings.categories);
     const players = settings.players;
     const impostors = new Set(shuffle(players.map((_, i) => i)).slice(0, settings.impostors));
 
