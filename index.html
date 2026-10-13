@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cut">
+  <meta name="theme-color" content="#14121f">
+  <title>El Impostor</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app">
+
+    <!-- Configuración -->
+    <section id="screen-setup" class="screen active">
+      <h1>🕵️ El Impostor</h1>
+      <p class="subtitle">Un solo móvil, pasadlo de mano en mano.</p>
+
+      <div class="card">
+        <h2>Jugadores <span id="player-count" class="badge">0</span></h2>
+        <form id="add-player-form" class="row">
+          <input id="player-input" type="text" placeholder="Nombre del jugador" maxlength="20" autocomplete="off">
+          <button type="submit" class="btn small">Añadir</button>
+        </form>
+        <ul id="player-list" class="player-list"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Impostores</h2>
+        <div class="stepper">
+          <button type="button" class="btn small ghost" id="imp-minus">−</button>
+          <span id="imp-count">1</span>
+          <button type="button" class="btn small ghost" id="imp-plus">+</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Categorías</h2>
+        <div id="category-list" class="chips"></div>
+      </div>
+
+      <div class="card">
+        <h2>Opciones</h2>
+        <label class="toggle">
+          <input type="checkbox" id="opt-hint">
+          <span>El impostor ve la categoría como pista</span>
+        </label>
+      </div>
+
+      <p id="setup-error" class="error"></p>
+      <button id="start-btn" class="btn big">Empezar partida</button>
+    </section>
+
+    <!-- Reparto de cartas -->
+    <section id="screen-reveal" class="screen">
+      <p class="step" id="reveal-step"></p>
+      <h2 class="pass-to">Pasa el móvil a</h2>
+      <h1 id="reveal-name" class="player-name"></h1>
+
+      <button id="reveal-card" class="secret-card" type="button">
+        <span class="card-front">Toca para ver tu carta</span>
+        <span class="card-back">
+          <span id="reveal-role" class="role"></span>
+          <span id="reveal-word" class="word"></span>
+          <span id="reveal-hint" class="hint"></span>
+        </span>
+      </button>
+
+      <button id="reveal-next" class="btn big hidden">Ocultar y pasar</button>
+    </section>
+
+    <!-- Pistas / debate -->
+    <section id="screen-discuss" class="screen">
+      <h1>¡A dar pistas!</h1>
+      <div class="card center">
+        <p>Empieza</p>
+        <p id="first-player" class="player-name"></p>
+        <p id="direction" class="muted"></p>
+      </div>
+      <div class="card">
+        <p>Por turnos, cada uno dice <strong>una palabra</strong> relacionada con la palabra secreta.
+          Haced las rondas que queráis y luego votad.</p>
+      </div>
+      <button id="to-vote" class="btn big">Ir a votación</button>
+    </section>
+
+    <!-- Votación -->
+    <section id="screen-vote" class="screen">
+      <h1>Votación</h1>
+      <p class="subtitle">¿A quién expulsáis? Tocad el jugador más votado.</p>
+      <ul id="vote-list" class="vote-list"></ul>
+    </section>
+
+    <!-- Resultado de la expulsión -->
+    <section id="screen-expelled" class="screen">
+      <h2 id="expelled-name" class="player-name"></h2>
+      <p id="expelled-verdict" class="verdict"></p>
+      <div id="guess-box" class="card center hidden">
+        <p>El impostor tiene una última oportunidad: <strong>¿adivina la palabra?</strong></p>
+        <div class="row">
+          <button id="guess-yes" class="btn danger">Sí, la adivinó</button>
+          <button id="guess-no" class="btn">No</button>
+        </div>
+      </div>
+      <button id="expelled-continue" class="btn big hidden">Seguir jugando</button>
+    </section>
+
+    <!-- Final -->
+    <section id="screen-end" class="screen">
+      <h1 id="end-title"></h1>
+      <p id="end-reason" class="subtitle"></p>
+      <div class="card center">
+        <p class="muted">La palabra era</p>
+        <p id="end-word" class="word big-word"></p>
+        <p class="muted" id="end-category"></p>
+      </div>
+      <div class="card center">
+        <p class="muted">Impostor(es)</p>
+        <p id="end-impostors" class="player-name"></p>
+      </div>
+      <button id="again-btn" class="btn big">Otra partida</button>
+      <button id="settings-btn" class="btn big ghost">Cambiar ajustes</button>
+    </section>
+
+  </main>
+
+  <script src="words.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
