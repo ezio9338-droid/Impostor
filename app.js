@@ -1,5 +1,6 @@
 (() => {
   const STORAGE_KEY = "impostor-settings";
+  const STARTER_KEY = "impostor-starters";
   const $ = (id) => document.getElementById(id);
 
   const CATEGORY_ICONS = {
@@ -310,9 +311,26 @@
     else showDiscuss();
   };
 
+  // Turno de inicio por "bolsa": todos empiezan una vez (en orden aleatorio) antes de que
+  // nadie repita, y nunca empieza la misma persona dos veces seguidas.
+  function pickStarter() {
+    const alive = [...game.alive].map((i) => settings.players[i]);
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem(STARTER_KEY)) || {}; } catch (e) {}
+    let bag = (Array.isArray(state.bag) ? state.bag : []).filter((n) => settings.players.includes(n));
+    let first = bag.find((n) => alive.includes(n) && n !== state.last);
+    if (!first) {
+      bag = shuffle(settings.players);
+      first = bag.find((n) => alive.includes(n) && n !== state.last) || pick(alive);
+    }
+    bag = bag.filter((n) => n !== first);
+    try { localStorage.setItem(STARTER_KEY, JSON.stringify({ bag, last: first })); } catch (e) {}
+    return first;
+  }
+
   function showDiscuss() {
     document.body.classList.remove("danger-mode");
-    const first = settings.players[pick([...game.alive])];
+    const first = pickStarter();
     $("first-player").textContent = first;
     paintAvatar($("first-avatar"), first);
     $("direction").textContent = Math.random() < 0.5 ? "↻ Sentido horario" : "↺ Sentido antihorario";
